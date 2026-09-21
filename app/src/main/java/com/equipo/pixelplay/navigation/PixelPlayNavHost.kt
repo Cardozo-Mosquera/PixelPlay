@@ -25,7 +25,10 @@ fun PixelPlayNavHost() {
             arguments = listOf(navArgument(Routes.ARG_GAME_ID) { type = NavType.IntType })
         ) { backStackEntry ->
             val gameId = backStackEntry.arguments?.getInt(Routes.ARG_GAME_ID) ?: 0
-            DetailScreen(gameId = gameId)
+            DetailScreen(
+                gameId = gameId,
+                onBack = { navController.navigateUp() }
+            )
         }
     }
 }
