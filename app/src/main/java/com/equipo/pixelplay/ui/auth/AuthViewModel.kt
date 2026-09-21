@@ -39,6 +39,9 @@ class AuthViewModel(
         initialValue = repo.currentUser != null
     )
 
+    /** Email del usuario actual, o null si no hay sesión. */
+    val currentUserEmail: String? get() = repo.currentUser?.email
+
     private val _formState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val formState: StateFlow<AuthUiState> = _formState.asStateFlow()
 

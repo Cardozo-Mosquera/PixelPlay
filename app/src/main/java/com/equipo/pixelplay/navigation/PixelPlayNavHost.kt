@@ -8,16 +8,28 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.equipo.pixelplay.ui.detail.DetailScreen
 import com.equipo.pixelplay.ui.home.HomeScreen
+import com.equipo.pixelplay.ui.profile.ProfileScreen
 
 /** Único NavHost de la app. */
 @Composable
-fun PixelPlayNavHost() {
+fun PixelPlayNavHost(
+    userEmail: String?,
+    onLogout: () -> Unit
+) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
             HomeScreen(
-                onGameClick = { id -> navController.navigate(Routes.detailRoute(id)) }
+                onGameClick = { id -> navController.navigate(Routes.detailRoute(id)) },
+                onProfileClick = { navController.navigate(Routes.PROFILE) }
+            )
+        }
+        composable(Routes.PROFILE) {
+            ProfileScreen(
+                userEmail = userEmail,
+                onLogout = onLogout,
+                onBack = { navController.navigateUp() }
             )
         }
         composable(

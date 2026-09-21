@@ -40,7 +40,10 @@ private fun AuthGate() {
     val isLogged by authViewModel.authState.collectAsStateWithLifecycle()
 
     if (isLogged) {
-        PixelPlayNavHost()
+        PixelPlayNavHost(
+            userEmail = authViewModel.currentUserEmail,
+            onLogout = { authViewModel.logout() }
+        )
     } else {
         var showRegister by remember { mutableStateOf(false) }
         if (showRegister) {
