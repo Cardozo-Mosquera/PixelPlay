@@ -1,5 +1,6 @@
 package com.equipo.pixelplay.data.remote.api
 
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -18,7 +19,16 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
+    // FreeToGame rechaza algunas peticiones sin User-Agent; lo fijamos siempre.
+    private val userAgentInterceptor = Interceptor { chain ->
+        val request = chain.request().newBuilder()
+            .header("User-Agent", "PixelPlay/1.0")
+            .build()
+        chain.proceed(request)
+    }
+
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
         .addInterceptor(loggingInterceptor)
         .build()
 
