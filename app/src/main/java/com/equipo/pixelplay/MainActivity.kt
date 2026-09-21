@@ -1,27 +1,58 @@
 package com.equipo.pixelplay
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.equipo.pixelplay.navigation.PixelPlayNavHost
+import com.equipo.pixelplay.ui.auth.AuthViewModel
+import com.equipo.pixelplay.ui.auth.LoginScreen
+import com.equipo.pixelplay.ui.auth.RegisterScreen
 import com.equipo.pixelplay.ui.theme.PixelPlayTheme
-import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Spike de plomería: verifica que Firebase inicializa (no cambia la UI/flujo).
-        val user = FirebaseAuth.getInstance().currentUser
-        Log.d("FirebaseSpike", "currentUser = ${user?.uid ?: "null"}")
-
         enableEdgeToEdge()
         setContent {
             PixelPlayTheme {
-                PixelPlayNavHost()
+                AuthGate()
             }
+        }
+    }
+}
+
+/**
+ * Puerta de autenticación: por encima de la app.
+ * Con sesión → la app actual (PixelPlayNavHost, intacta).
+ * Sin sesión → alterna Login / Register compartiendo el mismo AuthViewModel.
+ */
+@Composable
+private fun AuthGate() {
+    val authViewModel: AuthViewModel = viewModel()
+    val isLogged by authViewModel.authState.collectAsStateWithLifecycle()
+
+    if (isLogged) {
+        PixelPlayNavHost()
+    } else {
+        var showRegister by remember { mutableStateOf(false) }
+        if (showRegister) {
+            RegisterScreen(
+                viewModel = authViewModel,
+                onGoLogin = { showRegister = false }
+            )
+        } else {
+            LoginScreen(
+                viewModel = authViewModel,
+                onGoRegister = { showRegister = true }
+            )
         }
     }
 }
