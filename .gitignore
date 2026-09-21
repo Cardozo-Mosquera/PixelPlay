@@ -8,3 +8,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase: no subir la config del proyecto
+google-services.json
+/app/google-services.json
