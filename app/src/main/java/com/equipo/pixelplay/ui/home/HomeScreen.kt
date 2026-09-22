@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,11 +41,13 @@ import com.equipo.pixelplay.ui.components.LoadingView
 fun HomeScreen(
     onGameClick: (Int) -> Unit,
     onProfileClick: () -> Unit,
+    onFavoritesClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
+    val favoritosIds by viewModel.favoritosIds.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -52,6 +55,12 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("PixelPlay") },
                 actions = {
+                    IconButton(onClick = onFavoritesClick) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Mis favoritos"
+                        )
+                    }
                     IconButton(onClick = onProfileClick) {
                         Icon(
                             imageVector = Icons.Filled.AccountCircle,
@@ -98,7 +107,12 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(current.games, key = { it.id }) { game ->
-                            GameCard(game = game, onGameClick = onGameClick)
+                            GameCard(
+                                game = game,
+                                onGameClick = onGameClick,
+                                esFavorito = favoritosIds.contains(game.id),
+                                onToggleFavorito = viewModel::alternarFavorito
+                            )
                         }
                     }
                 }

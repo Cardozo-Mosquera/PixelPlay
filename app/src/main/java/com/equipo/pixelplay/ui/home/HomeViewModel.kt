@@ -2,6 +2,7 @@ package com.equipo.pixelplay.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.equipo.pixelplay.data.repository.FavoritesRepository
 import com.equipo.pixelplay.data.repository.GameRepository
 import com.equipo.pixelplay.domain.model.Game
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.Normalizer
@@ -34,8 +36,22 @@ internal fun filtrarJuegos(games: List<Game>, query: String): List<Game> {
  * y expone el estado FILTRADO por el query (filtrado en memoria, sin llamar a la API).
  */
 class HomeViewModel(
-    private val repository: GameRepository = GameRepository()
+    private val repository: GameRepository = GameRepository(),
+    private val favoritesRepository: FavoritesRepository = FavoritesRepository()
 ) : ViewModel() {
+
+    /**
+     * Ids de los juegos favoritos de la cuenta, en vivo. Se expone aparte del uiState
+     * para no tocar el filtro de búsqueda existente (HomeUiState sigue siendo solo la lista).
+     */
+    val favoritosIds: StateFlow<Set<Int>> =
+        favoritesRepository.observarFavoritos()
+            .map { games -> games.map { it.id }.toSet() }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptySet()
+            )
 
     // Estado base (lo escriben loadGames()/retry()); el uiState público es derivado e inmutable.
     private val _baseState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -64,6 +80,14 @@ class HomeViewModel(
 
     fun onQueryChange(nuevo: String) {
         _query.value = nuevo
+    }
+
+    /** Marca/desmarca un juego como favorito desde la grilla del Home. */
+    fun alternarFavorito(game: Game) {
+        val esFavorito = favoritosIds.value.contains(game.id)
+        viewModelScope.launch {
+            favoritesRepository.alternarFavorito(game, esFavorito)
+        }
     }
 
     private fun loadGames() {
