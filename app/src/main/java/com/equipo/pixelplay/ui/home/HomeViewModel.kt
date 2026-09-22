@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.equipo.pixelplay.data.repository.FavoritesRepository
 import com.equipo.pixelplay.data.repository.GameRepository
+import com.equipo.pixelplay.data.repository.UserRepository
 import com.equipo.pixelplay.domain.model.Game
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,8 +38,13 @@ internal fun filtrarJuegos(games: List<Game>, query: String): List<Game> {
  */
 class HomeViewModel(
     private val repository: GameRepository = GameRepository(),
-    private val favoritesRepository: FavoritesRepository = FavoritesRepository()
+    private val favoritesRepository: FavoritesRepository = FavoritesRepository(),
+    private val userRepository: UserRepository = UserRepository()
 ) : ViewModel() {
+
+    // Rol leído una vez al abrir Home; solo controla mostrar/ocultar el acceso admin.
+    private val _esAdmin = MutableStateFlow(false)
+    val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
 
     /**
      * Ids de los juegos favoritos de la cuenta, en vivo. Se expone aparte del uiState
@@ -74,6 +80,9 @@ class HomeViewModel(
 
     init {
         loadGames()
+        viewModelScope.launch {
+            _esAdmin.value = userRepository.rolUsuarioActual() == "admin"
+        }
     }
 
     fun retry() = loadGames()

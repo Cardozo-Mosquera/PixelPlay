@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,12 +43,14 @@ fun HomeScreen(
     onGameClick: (Int) -> Unit,
     onProfileClick: () -> Unit,
     onFavoritesClick: () -> Unit,
+    onAdminClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val favoritosIds by viewModel.favoritosIds.collectAsStateWithLifecycle()
+    val esAdmin by viewModel.esAdmin.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -55,6 +58,15 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("PixelPlay") },
                 actions = {
+                    // Acceso al panel de administración: solo visible para admins.
+                    if (esAdmin) {
+                        IconButton(onClick = onAdminClick) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = "Administración"
+                            )
+                        }
+                    }
                     IconButton(onClick = onFavoritesClick) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,

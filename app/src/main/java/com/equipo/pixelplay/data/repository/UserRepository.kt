@@ -1,5 +1,6 @@
 package com.equipo.pixelplay.data.repository
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -11,7 +12,8 @@ import kotlinx.coroutines.tasks.await
  * Ningún @Composable ni ViewModel toca Firestore directo: todo pasa por aquí.
  */
 class UserRepository(
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
     /**
      * Crea o actualiza `users/{uid}` de forma idempotente.
@@ -42,5 +44,11 @@ class UserRepository(
     suspend fun getUserRole(uid: String): String {
         val snapshot = db.collection("users").document(uid).get().await()
         return snapshot.getString("role") ?: "user"
+    }
+
+    /** Rol del usuario autenticado actual, o "user" si no hay sesión. */
+    suspend fun rolUsuarioActual(): String {
+        val uid = auth.currentUser?.uid ?: return "user"
+        return getUserRole(uid)
     }
 }

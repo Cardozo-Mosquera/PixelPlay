@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.equipo.pixelplay.ui.admin.AdminUsersScreen
 import com.equipo.pixelplay.ui.detail.DetailScreen
 import com.equipo.pixelplay.ui.favorites.FavoritesScreen
 import com.equipo.pixelplay.ui.home.HomeScreen
@@ -24,7 +25,13 @@ fun PixelPlayNavHost(
             HomeScreen(
                 onGameClick = { id -> navController.navigate(Routes.detailRoute(id)) },
                 onProfileClick = { navController.navigate(Routes.PROFILE) },
-                onFavoritesClick = { navController.navigate(Routes.FAVORITES) }
+                onFavoritesClick = { navController.navigate(Routes.FAVORITES) },
+                onAdminClick = { navController.navigate(Routes.ADMIN_USERS) }
+            )
+        }
+        composable(Routes.ADMIN_USERS) {
+            AdminUsersScreen(
+                onBack = { navController.navigateUp() }
             )
         }
         composable(Routes.FAVORITES) {
