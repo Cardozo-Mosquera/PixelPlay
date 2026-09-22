@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.equipo.pixelplay.domain.model.Game
 import com.equipo.pixelplay.ui.components.ErrorView
 import com.equipo.pixelplay.ui.components.GameCard
 import com.equipo.pixelplay.ui.components.LoadingView
@@ -51,6 +55,7 @@ fun HomeScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val favoritosIds by viewModel.favoritosIds.collectAsStateWithLifecycle()
     val esAdmin by viewModel.esAdmin.collectAsStateWithLifecycle()
+    val destacados by viewModel.destacados.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -99,6 +104,16 @@ fun HomeScreen(
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 )
 
+                // Sección "Destacados": solo si hay destacados y no hay búsqueda activa.
+                if (destacados.isNotEmpty() && query.isBlank()) {
+                    FeaturedSection(
+                        games = destacados,
+                        onGameClick = onGameClick,
+                        favoritosIds = favoritosIds,
+                        onToggleFavorito = viewModel::alternarFavorito
+                    )
+                }
+
                 if (current.games.isEmpty() && query.isNotBlank()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -135,6 +150,42 @@ fun HomeScreen(
                 onRetry = viewModel::retry,
                 modifier = Modifier.padding(innerPadding)
             )
+        }
+    }
+}
+
+/**
+ * Carrusel horizontal de juegos destacados (solo lectura para todos).
+ * Toca una tarjeta → detail/{id}. Mantiene el toggle de favorito de GameCard,
+ * que en fila horizontal necesita un ancho fijo por tarjeta.
+ */
+@Composable
+private fun FeaturedSection(
+    games: List<Game>,
+    onGameClick: (Int) -> Unit,
+    favoritosIds: Set<Int>,
+    onToggleFavorito: (Game) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = "Destacados",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(games, key = { it.id }) { game ->
+                GameCard(
+                    game = game,
+                    onGameClick = onGameClick,
+                    esFavorito = favoritosIds.contains(game.id),
+                    onToggleFavorito = onToggleFavorito,
+                    modifier = Modifier.width(220.dp)
+                )
+            }
         }
     }
 }

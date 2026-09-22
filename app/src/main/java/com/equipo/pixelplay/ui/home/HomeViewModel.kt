@@ -3,6 +3,7 @@ package com.equipo.pixelplay.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.equipo.pixelplay.data.repository.FavoritesRepository
+import com.equipo.pixelplay.data.repository.FeaturedRepository
 import com.equipo.pixelplay.data.repository.GameRepository
 import com.equipo.pixelplay.data.repository.UserRepository
 import com.equipo.pixelplay.domain.model.Game
@@ -39,7 +40,8 @@ internal fun filtrarJuegos(games: List<Game>, query: String): List<Game> {
 class HomeViewModel(
     private val repository: GameRepository = GameRepository(),
     private val favoritesRepository: FavoritesRepository = FavoritesRepository(),
-    private val userRepository: UserRepository = UserRepository()
+    private val userRepository: UserRepository = UserRepository(),
+    private val featuredRepository: FeaturedRepository = FeaturedRepository()
 ) : ViewModel() {
 
     // Rol leído una vez al abrir Home; solo controla mostrar/ocultar el acceso admin.
@@ -76,6 +78,23 @@ class HomeViewModel(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = HomeUiState.Loading
+        )
+
+    /**
+     * Juegos destacados (config/home) cruzados con la lista base ya cargada.
+     * Separado del uiState (como favoritosIds/esAdmin) para no tocar el filtro de búsqueda.
+     * Se respeta el orden de featuredIds; sin llamadas extra a la API. Vacío si el estado
+     * base no es Success o si ningún id destacado está en el catálogo cargado.
+     */
+    val destacados: StateFlow<List<Game>> =
+        combine(featuredRepository.observarDestacados(), _baseState) { ids, base ->
+            val juegos = (base as? HomeUiState.Success)?.games ?: return@combine emptyList()
+            val porId = juegos.associateBy { it.id }
+            ids.mapNotNull { porId[it] }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
         )
 
     init {

@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +48,8 @@ fun DetailScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val esFavorito by viewModel.esFavorito.collectAsStateWithLifecycle()
+    val esAdmin by viewModel.esAdmin.collectAsStateWithLifecycle()
+    val esDestacado by viewModel.esDestacado.collectAsStateWithLifecycle()
 
     val title = (state as? DetailUiState.Success)?.game?.name ?: "Detalle"
 
@@ -65,6 +69,18 @@ fun DetailScreen(
                     }
                 },
                 actions = {
+                    // Estrella = destacado global: solo admin lo ve y lo puede alternar.
+                    // (Corazón = mi favorito personal; se muestra a todos, abajo.)
+                    if (esAdmin && state is DetailUiState.Success) {
+                        IconButton(onClick = viewModel::alternarDestacado) {
+                            Icon(
+                                imageVector = if (esDestacado) Icons.Filled.Star
+                                else Icons.Outlined.Star,
+                                contentDescription = if (esDestacado) "Quitar de destacados"
+                                else "Marcar como destacado"
+                            )
+                        }
+                    }
                     // El toggle solo tiene sentido con el juego ya cargado.
                     if (state is DetailUiState.Success) {
                         IconButton(onClick = viewModel::alternarFavorito) {
