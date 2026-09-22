@@ -5,6 +5,7 @@ object Routes {
     const val HOME = "home"
     const val PROFILE = "profile"
     const val FAVORITES = "favorites"
+    const val ADMIN_USERS = "admin_users"
     const val ARG_GAME_ID = "gameId"
     const val DETAIL = "detail/{$ARG_GAME_ID}"
 
