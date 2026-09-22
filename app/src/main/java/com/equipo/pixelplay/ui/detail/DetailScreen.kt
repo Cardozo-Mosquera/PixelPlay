@@ -13,6 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +45,7 @@ fun DetailScreen(
     viewModel: DetailViewModel = viewModel(factory = DetailViewModel.provideFactory(gameId))
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val esFavorito by viewModel.esFavorito.collectAsStateWithLifecycle()
 
     val title = (state as? DetailUiState.Success)?.game?.name ?: "Detalle"
 
@@ -59,6 +62,19 @@ fun DetailScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
+                    }
+                },
+                actions = {
+                    // El toggle solo tiene sentido con el juego ya cargado.
+                    if (state is DetailUiState.Success) {
+                        IconButton(onClick = viewModel::alternarFavorito) {
+                            Icon(
+                                imageVector = if (esFavorito) Icons.Filled.Favorite
+                                else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (esFavorito) "Quitar de favoritos"
+                                else "Agregar a favoritos"
+                            )
+                        }
                     }
                 }
             )
