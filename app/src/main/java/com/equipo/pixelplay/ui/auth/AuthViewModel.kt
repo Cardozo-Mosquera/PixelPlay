@@ -1,8 +1,10 @@
 package com.equipo.pixelplay.ui.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.equipo.pixelplay.data.repository.AuthRepository
+import com.equipo.pixelplay.data.repository.UserRepository
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
@@ -29,7 +31,8 @@ internal fun mapAuthErrorToSpanish(e: Throwable): String = when (e) {
 }
 
 class AuthViewModel(
-    private val repo: AuthRepository = AuthRepository()
+    private val repo: AuthRepository = AuthRepository(),
+    private val userRepo: UserRepository = UserRepository()
 ) : ViewModel() {
 
     /** true = hay usuario. Semilla con el usuario actual para no parpadear el login. */
@@ -42,6 +45,10 @@ class AuthViewModel(
     /** Email del usuario actual, o null si no hay sesión. */
     val currentUserEmail: String? get() = repo.currentUser?.email
 
+    private companion object {
+        const val TAG = "PixelPlay/Firestore"
+    }
+
     private val _formState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val formState: StateFlow<AuthUiState> = _formState.asStateFlow()
 
@@ -51,6 +58,7 @@ class AuthViewModel(
         viewModelScope.launch {
             try {
                 repo.login(email.trim(), pass)
+                syncUserDoc()
                 // En éxito no navegamos: el gate reacciona a authState.
                 _formState.value = AuthUiState.Idle
             } catch (e: Exception) {
@@ -65,10 +73,29 @@ class AuthViewModel(
         viewModelScope.launch {
             try {
                 repo.register(email.trim(), pass)
+                syncUserDoc()
                 _formState.value = AuthUiState.Idle
             } catch (e: Exception) {
                 _formState.value = AuthUiState.Error(mapAuthErrorToSpanish(e))
             }
+        }
+    }
+
+    /**
+     * Backfill del doc `users/{uid}` tras un login/registro exitoso: lo crea/mergea
+     * y loguea el role leído. Un fallo de Firestore NO rompe la sesión (Auth ya funcionó):
+     * solo se loguea y el backfill se reintentará en el próximo login.
+     */
+    private suspend fun syncUserDoc() {
+        val user = repo.currentUser ?: return
+        val uid = user.uid
+        val email = user.email.orEmpty()
+        try {
+            userRepo.ensureUserDoc(uid, email)
+            val role = userRepo.getUserRole(uid)
+            Log.d(TAG, "users/$uid ok — role=$role")
+        } catch (e: Exception) {
+            Log.w(TAG, "No se pudo sincronizar users/$uid (sesión intacta)", e)
         }
     }
 
