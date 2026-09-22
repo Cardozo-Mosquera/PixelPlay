@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    // Lee el propio doc del solicitante; get() dentro de reglas NO re-dispara reglas.
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- users ---
+    match /users/{uid} {
+      // El dueño lee lo suyo; un admin puede leer/listar todos (panel de admin).
+      allow read: if isOwner(uid) || isAdmin();
+      // Crear el propio doc, solo con role "user" (nadie nace admin desde la app).
+      allow create: if isOwner(uid) && request.resource.data.role == 'user';
+      // Actualizar lo propio, pero SIN cambiarse el role (no hay auto-ascenso a admin).
+      allow update: if isOwner(uid) && request.resource.data.role == resource.data.role;
+      // Nadie borra docs de usuario desde la app.
+      allow delete: if false;
+
+      // --- favoritos: solo el dueño ---
+      match /favorites/{gameId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // --- gameStats: contador de favoritos ---
+    // Cualquier autenticado lee y actualiza el contador (el toggle hace increment(±1)).
+    match /gameStats/{gameId} {
+      allow read, write: if signedIn();
+    }
+
+    // --- config: para la Fase B (destacados). El admin escribe, todos leen. ---
+    match /config/{doc} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
